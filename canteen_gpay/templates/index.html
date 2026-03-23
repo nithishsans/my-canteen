@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SASTRA E-Canteen</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-page">
+
+<nav class="navbar">
+  <div class="logo">
+    <div class="logo-mark">🍽</div>
+    <span class="logo-text">SASTRA <strong>E-Canteen</strong></span>
+  </div>
+  <div class="nav-links">
+    <a href="#menu" class="nav-link">Menu</a>
+    <a href="#how" class="nav-link">How It Works</a>
+    <a href="{{ url_for('student_login') }}" class="btn-outline">Student Login</a>
+    <a href="{{ url_for('admin_login') }}" class="btn-solid">Admin Panel</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+      <span class="toggle-icon" id="themeIcon">☀️</span>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="grain-overlay"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>🎓 SASTRA University &nbsp;·&nbsp; Live Now</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="ht-line">Skip the</span>
+        <span class="ht-line ht-accent">Queue.</span>
+        <span class="ht-line">Order. Eat.</span>
+      </h1>
+      <p class="hero-subtitle">Pre-order from your campus canteen, pay via GPay, and collect with your token. Zero waiting. Pure flavour.</p>
+      <div class="hero-cta-group">
+        <a href="{{ url_for('student_login') }}" class="primary-cta">
+          <span>Order Now</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9h10M10 5l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#menu" class="secondary-cta">View Today's Menu</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <span class="sp-num">500+</span>
+          <span class="sp-label">Daily Orders</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-pill">
+          <span class="sp-num">15min</span>
+          <span class="sp-label">Avg Pickup</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-pill">
+          <span class="sp-num">GPay</span>
+          <span class="sp-label">Instant Pay</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="orbit-scene">
+        <div class="center-dish">
+          <div class="dish-halo"></div>
+          <div class="dish-emoji">🥘</div>
+          <div class="pulse-ring pr1"></div>
+          <div class="pulse-ring pr2"></div>
+        </div>
+        <div class="float-card fc1">
+          <span class="fc-emoji">🍛</span>
+          <div><div class="fc-name">Veg Thali</div><div class="fc-price">₹60</div></div>
+        </div>
+        <div class="float-card fc2">
+          <span class="fc-emoji">🍗</span>
+          <div><div class="fc-name">Chicken Biryani</div><div class="fc-price">₹90</div></div>
+        </div>
+        <div class="float-card fc3">
+          <span class="fc-emoji">🥞</span>
+          <div><div class="fc-name">Masala Dosa</div><div class="fc-price">₹40</div></div>
+        </div>
+        <div class="float-card fc4">
+          <span class="fc-emoji">🍜</span>
+          <div><div class="fc-name">Noodles</div><div class="fc-price">₹55</div></div>
+        </div>
+        <div class="spark sp1">✦</div>
+        <div class="spark sp2">✦</div>
+        <div class="spark sp3">·</div>
+        <div class="spark sp4">·</div>
+        <div class="spark sp5">✦</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line-anim"></div>
+  </div>
+</section>
+
+<!-- VIDEO SECTION -->
+<section class="video-section" id="video">
+  <div class="vs-inner">
+    <div class="vs-text">
+      <span class="section-tag">See it live</span>
+      <h2>Fresh Food, <span class="accent-text">Every Day</span></h2>
+      <p>Watch how we craft your favourite campus meals — from kitchen to your hands in minutes, every single day.</p>
+      <a href="{{ url_for('student_login') }}" class="vs-cta-btn">Start Ordering →</a>
+      <div class="vs-features">
+        <div class="vsf"><span>🔥</span> Made fresh daily</div>
+        <div class="vsf"><span>⚡</span> 15-min ready</div>
+        <div class="vsf"><span>🛡️</span> Hygienic kitchen</div>
+      </div>
+    </div>
+    <div class="vs-video-wrap">
+      <div class="vs-video-frame">
+        <iframe
+          src="https://www.youtube.com/embed/VuWhISXlpAk?autoplay=1&mute=1&loop=1&playlist=VuWhISXlpAk&controls=0&showinfo=0&rel=0&modestbranding=1"
+          title="Canteen Food"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+          loading="lazy">
+        </iframe>
+        <div class="vs-video-overlay">
+          <div class="vvo-live"><span class="vvo-dot"></span>LIVE KITCHEN</div>
+          <div class="vvo-badge">HD</div>
+        </div>
+      </div>
+      <div class="vs-deco"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section class="menu-section" id="menu">
+  <div class="section-head">
+    <span class="section-tag">Fresh & Hot</span>
+    <h2>Today's <span class="accent-text">Menu</span></h2>
+    <p>Curated daily. Served fresh.</p>
+  </div>
+  <div class="menu-preview" id="menuPreview">
+    <div class="menu-loading">
+      <div class="ml-card"></div><div class="ml-card"></div><div class="ml-card"></div><div class="ml-card"></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="section-head">
+    <span class="section-tag">Simple &amp; Fast</span>
+    <h2>How It <span class="accent-text">Works</span></h2>
+  </div>
+  <div class="steps-row">
+    <div class="step-item" style="--sd:0ms">
+      <div class="step-no">01</div>
+      <div class="step-ico">📱</div>
+      <h3>Login &amp; Browse</h3>
+      <p>Sign in with your college email and explore today's fresh menu</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-item" style="--sd:150ms">
+      <div class="step-no">02</div>
+      <div class="step-ico">🛒</div>
+      <h3>Add &amp; Order</h3>
+      <p>Pick your items, choose a pickup slot, and review your bill</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-item" style="--sd:300ms">
+      <div class="step-no">03</div>
+      <div class="step-ico">💳</div>
+      <h3>Pay via GPay</h3>
+      <p>Scan the QR and pay instantly using Google Pay</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-item" style="--sd:450ms">
+      <div class="step-no">04</div>
+      <div class="step-ico">🎫</div>
+      <h3>Show &amp; Collect</h3>
+      <p>Get your 6-digit token and pick up at the counter</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-brand">
+      <div class="sf-logo">🍽 SASTRA E-Canteen</div>
+      <p>Making campus dining smarter, faster, tastier.</p>
+    </div>
+    <div class="sf-links">
+      <a href="{{ url_for('student_login') }}">Student Login</a>
+      <a href="{{ url_for('admin_login') }}">Admin</a>
+      <a href="#menu">Menu</a>
+      <a href="#how">How It Works</a>
+    </div>
+  </div>
+  <div class="sf-bottom">© 2024 SASTRA E-Canteen · SASTRA Deemed University · Thanjavur, Tamil Nadu</div>
+</footer>
+
+<script>
+function getTheme(){return localStorage.getItem('ecanteen-theme')||'dark';}
+function applyTheme(t){
+  document.body.classList.toggle('light-mode',t==='light');
+  document.getElementById('themeIcon').textContent=t==='light'?'🌙':'☀️';
+  localStorage.setItem('ecanteen-theme',t);
+}
+function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark');}
+applyTheme(getTheme());
+
+// Scroll reveal
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');revealObs.unobserve(e.target);}});
+},{threshold:0.12});
+document.querySelectorAll('.step-item,.menu-card-new,.vs-text,.vs-video-wrap').forEach(el=>revealObs.observe(el));
+
+// Menu load
+fetch('/api/menu').then(r=>r.json()).then(foods=>{
+  const c=document.getElementById('menuPreview');
+  if(!foods.length){c.innerHTML='<p class="no-menu">No menu items today</p>';return;}
+  c.innerHTML=`<div class="menu-grid-new">${foods.slice(0,8).map(f=>`
+    <div class="menu-card-new">
+      <div class="mcn-img">
+        <img src="${f.image}" alt="${f.name}" loading="lazy">
+        <div class="mcn-cat-tag">${f.category}</div>
+      </div>
+      <div class="mcn-body">
+        <h4>${f.name}</h4>
+        <p>${f.description}</p>
+        <div class="mcn-foot">
+          <span class="mcn-price">₹${f.price}</span>
+          <span class="mcn-rating">⭐ ${f.rating}</span>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
+  document.querySelectorAll('.menu-card-new').forEach(el=>revealObs.observe(el));
+}).catch(()=>{document.getElementById('menuPreview').innerHTML='<p class="no-menu">Could not load menu</p>';});
+</script>
+</body>
+</html>

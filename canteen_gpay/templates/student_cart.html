@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout – SASTRA E-Canteen</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+/* ── Payment flow specific styles ───────────────────────── */
+.pay-flow { max-width: 540px; margin: 0 auto; }
+
+/* Steps indicator */
+.pay-steps {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 2.2rem; padding: 0 .5rem;
+}
+.ps-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .3rem; flex: 1;
+}
+.ps-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 800;
+  color: var(--text2); background: var(--card2);
+  transition: all .3s;
+}
+.ps-label { font-size: .68rem; font-weight: 600; color: var(--text2); text-align: center; white-space: nowrap; }
+.ps-line { flex: 1; height: 2px; background: var(--border2); margin-bottom: 1.3rem; transition: background .3s; }
+.ps-item.active .ps-circle { border-color: var(--primary); background: var(--primary); color: white; }
+.ps-item.active .ps-label { color: var(--primary); }
+.ps-item.done .ps-circle { border-color: var(--green); background: var(--green); color: white; }
+.ps-item.done .ps-label { color: var(--green); }
+.ps-line.done { background: var(--green); }
+
+/* Pay step panels */
+.pay-panel { display: none; }
+.pay-panel.active { display: block; animation: panelIn .3s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* GPay launch button */
+.gpay-launch-btn {
+  display: flex; align-items: center; justify-content: center; gap: .8rem;
+  width: 100%; padding: 1.1rem;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: white; border-radius: 14px;
+  font-size: 1.05rem; font-weight: 800;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 6px 20px rgba(66,133,244,.35);
+  margin-bottom: 1rem;
+}
+.gpay-launch-btn:hover { opacity: .92; transform: translateY(-2px); }
+.gpay-icon { font-size: 1.5rem; }
+
+/* UPI QR card */
+.upi-card {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 1.5rem;
+  text-align: center; margin-bottom: 1.2rem;
+}
+.upi-amount-badge {
+  display: inline-block;
+  background: rgba(252,128,25,.12); border: 1px solid rgba(252,128,25,.25);
+  color: var(--primary); font-size: 1.6rem; font-weight: 800;
+  padding: .4rem 1.4rem; border-radius: 30px;
+  font-family: 'Syne', sans-serif; margin-bottom: 1rem;
+}
+.upi-qr-wrap {
+  background: white; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px; margin-bottom: 1rem;
+}
+.upi-id-row {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  font-size: .85rem; color: var(--text2); font-weight: 600; margin-bottom: .4rem;
+}
+.upi-id-value {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  background: var(--card); border: 1px solid var(--border2);
+  padding: .25rem .7rem; border-radius: 6px;
+  font-size: .88rem; color: var(--text); font-weight: 700;
+}
+.upi-hint { font-size: .75rem; color: var(--muted); }
+
+/* Divider */
+.or-divider {
+  display: flex; align-items: center; gap: .8rem;
+  color: var(--muted); font-size: .78rem; margin: 1.2rem 0;
+}
+.or-divider::before, .or-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Transaction ID input step */
+.txn-input-card {
+  background: var(--card2); border: 1.5px solid var(--border2);
+  border-radius: 16px; padding: 1.5rem;
+}
+.txn-input-header {
+  display: flex; align-items: center; gap: .6rem;
+  margin-bottom: 1.2rem;
+}
+.txn-input-header .txn-ico { font-size: 1.4rem; }
+.txn-input-header h3 { font-size: 1rem; font-weight: 700; }
+.txn-input-header p { font-size: .78rem; color: var(--text2); margin-top: .15rem; }
+.txn-field { position: relative; margin-bottom: 1rem; }
+.txn-field label { display: block; font-size: .8rem; font-weight: 700; color: var(--text2); margin-bottom: .45rem; }
+.txn-field input {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 1.05rem; letter-spacing: .05em;
+  text-transform: uppercase; padding: .9rem 1rem;
+}
+.txn-field input:focus { border-color: var(--primary); }
+
+.txn-submit-btn {
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  width: 100%; padding: .95rem;
+  background: var(--primary); color: white;
+  border-radius: 12px; font-size: .97rem; font-weight: 800;
+  transition: background .2s, transform .15s, box-shadow .2s;
+}
+.txn-submit-btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 20px var(--primary-glow); }
+.txn-submit-btn:disabled { opacity: .5; pointer-events: none; }
+
+/* Waiting screen */
+.waiting-card {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+.waiting-spinner {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 3px solid var(--border2);
+  border-top-color: var(--primary);
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.2rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.waiting-card h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+.waiting-card p { font-size: .85rem; color: var(--text2); line-height: 1.6; }
+.waiting-txn-id {
+  display: inline-block;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  background: var(--card); border: 1px solid var(--border2);
+  padding: .4rem 1rem; border-radius: 8px;
+  font-size: .88rem; color: var(--primary); font-weight: 700;
+  margin: .8rem 0 1.2rem; letter-spacing: .05em;
+}
+.waiting-ping {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  font-size: .78rem; color: var(--text2); margin-top: 1rem;
+}
+.ping-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+  animation: pulse 1.5s ease infinite;
+}
+
+/* Order summary mini */
+.order-mini-summary {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 1rem 1.1rem;
+  margin-bottom: 1.2rem;
+}
+.oms-row { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; padding: .22rem 0; }
+.oms-total { font-size: 1rem; font-weight: 800; border-top: 1px dashed var(--border); margin-top: .4rem; padding-top: .5rem; }
+.oms-total span:last-child { color: var(--primary); }
+
+/* Bill info bar */
+.bill-info-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 10px; padding: .6rem 1rem;
+  font-size: .8rem; margin-bottom: 1.2rem;
+}
+.bib-label { color: var(--text2); font-weight: 500; }
+.bib-value { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text); font-size: .82rem; }
+</style>
+</head>
+<body class="dashboard-page">
+
+<nav class="dash-nav">
+  <div class="logo">🍽 SASTRA E-Canteen</div>
+  <div class="nav-center"></div>
+  <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span class="toggle-icon" id="themeIcon">☀️</span>
+    </button>
+    <span class="user-badge">👤 {{ name }}</span>
+    <a href="/student/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<div class="cart-page-wrapper">
+  <div class="cart-header">
+    <span class="back-to-menu" onclick="goBack()">← Back to Menu</span>
+    <h2>Checkout</h2>
+  </div>
+
+  <!-- Empty cart -->
+  <div id="cartEmpty" class="cart-empty" style="display:none">
+    <div class="empty-icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p>Add items from the menu to get started</p>
+    <br>
+    <button onclick="window.location.href='/student/dashboard'" style="background:var(--primary);color:white;padding:.8rem 2rem;border-radius:10px;font-weight:800;font-size:.95rem;">Browse Menu</button>
+  </div>
+
+  <!-- Cart + order content -->
+  <div id="cartContent">
+    <div class="cart-items-list" id="cartItemsList"></div>
+
+    <div class="bill-card">
+      <h3>💰 Bill Details</h3>
+      <div class="bill-row"><span>Item Total</span><span id="billItemTotal">₹0</span></div>
+      <div class="bill-row"><span>Delivery Fee</span><span style="color:var(--green)">FREE</span></div>
+      <div class="bill-row total"><span>Total Amount</span><span id="billTotal">₹0</span></div>
+    </div>
+
+    <div class="slot-section">
+      <label>⏰ Select Pickup Time Slot</label>
+      <select id="timeSlot">
+        <option value="">-- Select a time slot --</option>
+        <option>12:00 PM – 12:15 PM</option>
+        <option>12:15 PM – 12:30 PM</option>
+        <option>12:30 PM – 12:45 PM</option>
+        <option>12:45 PM – 1:00 PM</option>
+        <option>1:00 PM – 1:15 PM</option>
+        <option>1:15 PM – 1:30 PM</option>
+        <option>1:30 PM – 1:45 PM</option>
+      </select>
+    </div>
+
+    <button class="proceed-btn" onclick="proceedToPayment()">
+      Proceed to Payment →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ PAYMENT MODAL ══════════ -->
+<div id="payModal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:520px;width:94%;">
+
+    <!-- Step indicator -->
+    <div class="pay-steps" id="paySteps">
+      <div class="ps-item active" id="psi1">
+        <div class="ps-circle">1</div>
+        <div class="ps-label">Pay</div>
+      </div>
+      <div class="ps-line" id="psl1"></div>
+      <div class="ps-item" id="psi2">
+        <div class="ps-circle">2</div>
+        <div class="ps-label">Enter UTR</div>
+      </div>
+      <div class="ps-line" id="psl2"></div>
+      <div class="ps-item" id="psi3">
+        <div class="ps-circle">3</div>
+        <div class="ps-label">Awaiting</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Pay via GPay ── -->
+    <div id="step1" class="pay-panel active">
+      <div class="bill-info-bar">
+        <span class="bib-label">Bill No</span>
+        <span class="bib-value" id="s1BillNo">—</span>
+        <span class="bib-label" style="margin-left:1rem">Amount</span>
+        <span class="bib-value" style="color:var(--primary)" id="s1Amount">₹0</span>
+      </div>
+
+      <div class="order-mini-summary" id="s1Summary"></div>
+
+      <!-- GPay deep-link button -->
+      <a id="gpayDeepLink" href="#" target="_blank" class="gpay-launch-btn" onclick="onGpayClicked()">
+        <span class="gpay-icon">G</span>
+        <span>Pay ₹<span id="gpayAmtSpan">0</span> with Google Pay</span>
+      </a>
+
+      <div class="or-divider">or scan QR below</div>
+
+      <!-- QR + UPI ID -->
+      <div class="upi-card">
+        <div class="upi-amount-badge">₹<span id="upiAmtBadge">0</span></div>
+        <div class="upi-qr-wrap">
+          <svg viewBox="0 0 100 100" width="150" height="150">
+            <rect width="100" height="100" fill="white"/>
+            <!-- Finder patterns -->
+            <rect x="10" y="10" width="28" height="28" fill="black"/><rect x="14" y="14" width="20" height="20" fill="white"/><rect x="18" y="18" width="12" height="12" fill="black"/>
+            <rect x="62" y="10" width="28" height="28" fill="black"/><rect x="66" y="14" width="20" height="20" fill="white"/><rect x="70" y="18" width="12" height="12" fill="black"/>
+            <rect x="10" y="62" width="28" height="28" fill="black"/><rect x="14" y="66" width="20" height="20" fill="white"/><rect x="18" y="70" width="12" height="12" fill="black"/>
+            <!-- Data modules -->
+            <rect x="42" y="10" width="6" height="6" fill="black"/><rect x="52" y="10" width="6" height="6" fill="black"/>
+            <rect x="42" y="20" width="6" height="6" fill="black"/><rect x="52" y="30" width="6" height="6" fill="black"/>
+            <rect x="42" y="42" width="6" height="6" fill="black"/><rect x="52" y="42" width="6" height="6" fill="black"/>
+            <rect x="62" y="42" width="6" height="6" fill="black"/><rect x="72" y="52" width="6" height="6" fill="black"/>
+            <rect x="82" y="42" width="6" height="6" fill="black"/><rect x="82" y="62" width="6" height="6" fill="black"/>
+            <rect x="62" y="72" width="6" height="6" fill="black"/><rect x="72" y="82" width="6" height="6" fill="black"/>
+            <rect x="42" y="62" width="6" height="6" fill="black"/><rect x="42" y="82" width="6" height="6" fill="black"/>
+            <rect x="52" y="72" width="6" height="6" fill="black"/><rect x="52" y="52" width="6" height="6" fill="black"/>
+            <rect x="82" y="72" width="6" height="6" fill="black"/><rect x="82" y="82" width="6" height="6" fill="black"/>
+          </svg>
+        </div>
+        <div class="upi-id-row">
+          <span>UPI ID:</span>
+          <span class="upi-id-value" id="displayedUpiId">canteen@sastra</span>
+        </div>
+        <div class="upi-hint">Open any UPI app · Scan QR or enter UPI ID above · Pay the exact amount shown</div>
+      </div>
+
+      <button class="txn-submit-btn" onclick="goToStep2()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        I have paid — Enter Transaction ID
+      </button>
+
+      <button class="adm-cancel-btn" style="width:100%;margin-top:.6rem;border-radius:12px;" onclick="closePayModal()">Cancel</button>
+    </div>
+
+    <!-- ── STEP 2: Enter UTR ── -->
+    <div id="step2" class="pay-panel">
+      <div class="bill-info-bar">
+        <span class="bib-label">Bill No</span>
+        <span class="bib-value" id="s2BillNo">—</span>
+        <span class="bib-label" style="margin-left:1rem">Amount</span>
+        <span class="bib-value" style="color:var(--primary)" id="s2Amount">₹0</span>
+      </div>
+
+      <div class="txn-input-card">
+        <div class="txn-input-header">
+          <span class="txn-ico">🧾</span>
+          <div>
+            <h3>Enter Transaction ID</h3>
+            <p>Find this in your GPay receipt or SMS · 12-digit UTR number</p>
+          </div>
+        </div>
+
+        <div class="txn-field">
+          <label>GPay / UPI Transaction ID (UTR)</label>
+          <input type="text" id="txnId"
+            placeholder="e.g. 123456789012"
+            maxlength="24"
+            oninput="onTxnInput(this)">
+        </div>
+
+        <div id="txnHelp" style="font-size:.75rem;color:var(--text2);margin-bottom:1rem;line-height:1.55">
+          📱 <strong>How to find:</strong> Open Google Pay → tap the payment → see <em>Transaction ID</em> or <em>UTR number</em> at the bottom.
+        </div>
+
+        <div id="txnMsg" class="adm-msg" style="display:none"></div>
+
+        <button class="txn-submit-btn" id="txnSubmitBtn" onclick="submitTransactionId()" disabled>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Submit Transaction ID
+        </button>
+      </div>
+
+      <button class="adm-cancel-btn" style="width:100%;margin-top:.8rem;border-radius:12px;" onclick="goToStep1()">← Back</button>
+    </div>
+
+    <!-- ── STEP 3: Waiting for admin ── -->
+    <div id="step3" class="pay-panel">
+      <div class="waiting-card">
+        <div class="waiting-spinner"></div>
+        <h3>Transaction ID Sent to Admin</h3>
+        <div class="waiting-txn-id" id="waitingTxnId">—</div>
+        <p>Your transaction ID has been forwarded to the canteen admin for verification. Your token will be ready once confirmed.</p>
+        <div class="waiting-ping">
+          <div class="ping-dot"></div>
+          Waiting for admin confirmation…
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:1.5rem">
+        <button onclick="checkConfirmation()" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:.6rem 1.5rem;border-radius:10px;font-size:.85rem;font-weight:600;transition:all .2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border2)'">
+          🔄 Check Status
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="success-overlay" style="display:none">
+  <div class="success-modal">
+    <div class="success-icon">🎉</div>
+    <h2>Payment Confirmed!</h2>
+    <p>Your order is confirmed. Collect at the canteen counter.</p>
+    <div class="token-display" id="tokenDisplay">000000</div>
+    <p style="font-size:.85rem;margin-bottom:1.5rem;color:var(--text2)">Show this 6-digit token at the counter</p>
+    <button onclick="window.location.href='/student/dashboard'">Continue Ordering</button>
+  </div>
+</div>
+
+<script>
+// ── Theme ──
+function getTheme(){return localStorage.getItem('ecanteen-theme')||'dark';}
+function applyTheme(t){
+  document.body.classList.toggle('light-mode',t==='light');
+  document.getElementById('themeIcon').textContent=t==='light'?'🌙':'☀️';
+  localStorage.setItem('ecanteen-theme',t);
+}
+function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark');}
+applyTheme(getTheme());
+
+// ── State ──
+let cart = {};
+let currentBillNo = null;
+let currentTotal  = 0;
+let submittedTxnId = null;
+let pollInterval  = null;
+
+function goBack(){
+  sessionStorage.setItem('ecanteen-cart', JSON.stringify(cart));
+  window.location.href = '/student/dashboard';
+}
+
+// ── Load cart ──
+function loadCart(){
+  try { cart = JSON.parse(sessionStorage.getItem('ecanteen-cart') || '{}'); } catch(e){ cart={}; }
+  renderCart();
+}
+
+function renderCart(){
+  const items = Object.values(cart);
+  if(!items.length){
+    document.getElementById('cartEmpty').style.display='block';
+    document.getElementById('cartContent').style.display='none';
+    return;
+  }
+  document.getElementById('cartEmpty').style.display='none';
+  document.getElementById('cartContent').style.display='block';
+  const total = items.reduce((s,i)=>s+i.price*i.qty, 0);
+  document.getElementById('billItemTotal').textContent='₹'+total;
+  document.getElementById('billTotal').textContent='₹'+total;
+  document.getElementById('cartItemsList').innerHTML = items.map(item=>`
+    <div class="cart-item-row">
+      <img class="ci-img" src="${item.image||'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400'}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400'">
+      <div class="ci-info">
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-price">₹${item.price} × ${item.qty}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button onclick="changeQty('${item.food_id}',-1)">−</button>
+        <span>${item.qty}</span>
+        <button onclick="changeQty('${item.food_id}',1)">+</button>
+      </div>
+      <div class="ci-subtotal">₹${item.price*item.qty}</div>
+    </div>`).join('');
+}
+
+function changeQty(id, delta){
+  if(!cart[id]) return;
+  cart[id].qty += delta;
+  if(cart[id].qty <= 0) delete cart[id];
+  sessionStorage.setItem('ecanteen-cart', JSON.stringify(cart));
+  renderCart();
+}
+
+// ── Step 1: Place order + open GPay ──
+async function proceedToPayment(){
+  const slot = document.getElementById('timeSlot').value;
+  if(!slot){ alert('Please select a pickup time slot'); return; }
+  const items = Object.values(cart).map(i=>({food_id:i.food_id, qty:i.qty}));
+  if(!items.length){ alert('Cart is empty'); return; }
+
+  const res = await fetch('/api/place_order',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({items, time_slot: slot})
+  });
+  const data = await res.json();
+  if(!data.success){ alert(data.message); return; }
+
+  currentBillNo = data.bill_no;
+  currentTotal  = data.total;
+
+  // Build mini summary
+  const cartItems = Object.values(cart);
+  const summaryHtml = cartItems.map(i=>
+    `<div class="oms-row"><span>${i.name} ×${i.qty}</span><span>₹${i.price*i.qty}</span></div>`
+  ).join('') + `<div class="oms-row oms-total"><span>Total</span><span>₹${data.total}</span></div>`;
+  document.getElementById('s1Summary').innerHTML = summaryHtml;
+
+  // Fill amounts and bill number
+  document.getElementById('s1BillNo').textContent = data.bill_no;
+  document.getElementById('s1Amount').textContent = '₹'+data.total;
+  document.getElementById('s2BillNo').textContent = data.bill_no;
+  document.getElementById('s2Amount').textContent = '₹'+data.total;
+  document.getElementById('gpayAmtSpan').textContent = data.total;
+  document.getElementById('upiAmtBadge').textContent = data.total;
+
+  // Fetch admin-configured UPI ID
+  let upiId = 'canteen@sastra', upiName = 'SASTRA Canteen';
+  try {
+    const upiRes = await fetch('/api/upi_info');
+    const upiData = await upiRes.json();
+    upiId   = upiData.upi_id   || upiId;
+    upiName = upiData.upi_name || upiName;
+  } catch(e) { /* use defaults */ }
+
+  // Build UPI deep-link for GPay
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${data.total}&cu=INR&tn=Order+${data.bill_no}`;
+  document.getElementById('gpayDeepLink').href = upiUrl;
+
+  // Update displayed UPI ID in QR card
+  document.querySelector('.upi-id-value').textContent = upiId;
+
+  // Reset to step 1
+  setStep(1);
+  document.getElementById('payModal').style.display = 'flex';
+}
+
+function onGpayClicked(){
+  // After a short delay auto-advance hint (user opened GPay, they'll come back)
+  setTimeout(()=>{
+    // Softly highlight the "Enter TX ID" button
+    const btn = document.querySelector('#step1 .txn-submit-btn');
+    if(btn){ btn.style.animation='pulse 1.5s ease 3'; }
+  }, 2000);
+}
+
+function closePayModal(){
+  document.getElementById('payModal').style.display='none';
+  clearInterval(pollInterval);
+}
+
+// ── Step navigation ──
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('step'+i).classList.toggle('active', i===n);
+  });
+  // Update step indicators
+  ['psi1','psi2','psi3'].forEach((id,idx)=>{
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if(idx+1 < n) el.classList.add('done');
+    else if(idx+1 === n) el.classList.add('active');
+  });
+  ['psl1','psl2'].forEach((id,idx)=>{
+    const el = document.getElementById(id);
+    el.classList.toggle('done', idx+1 < n);
+  });
+}
+
+function goToStep1(){ setStep(1); }
+function goToStep2(){ setStep(2); document.getElementById('txnId').focus(); }
+
+// ── Step 2: Transaction ID input ──
+function onTxnInput(el){
+  const val = el.value.trim();
+  document.getElementById('txnSubmitBtn').disabled = val.length < 6;
+}
+
+async function submitTransactionId(){
+  const txnId = document.getElementById('txnId').value.trim().toUpperCase();
+  const msgEl = document.getElementById('txnMsg');
+
+  if(txnId.length < 6){
+    msgEl.textContent='Please enter a valid transaction ID (min 6 characters)';
+    msgEl.className='adm-msg adm-error';
+    msgEl.style.display='block';
+    return;
+  }
+
+  const btn = document.getElementById('txnSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML='<span style="opacity:.7">Submitting…</span>';
+
+  const res = await fetch('/api/verify_payment',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({bill_no: currentBillNo, transaction_id: txnId})
+  });
+  const data = await res.json();
+
+  if(data.success){
+    submittedTxnId = txnId;
+    document.getElementById('waitingTxnId').textContent = txnId;
+    setStep(3);
+    startPolling();
+  } else {
+    msgEl.textContent = data.message || 'Something went wrong';
+    msgEl.className='adm-msg adm-error';
+    msgEl.style.display='block';
+    btn.disabled = false;
+    btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Submit Transaction ID`;
+  }
+}
+
+// ── Step 3: Poll for admin confirmation ──
+function startPolling(){
+  clearInterval(pollInterval);
+  pollInterval = setInterval(checkConfirmation, 8000); // every 8 seconds
+}
+
+async function checkConfirmation(){
+  if(!currentBillNo) return;
+  try {
+    const res = await fetch('/api/order_status?bill_no='+currentBillNo);
+    const data = await res.json();
+    if(data.payment_verified){
+      clearInterval(pollInterval);
+      // Show success
+      document.getElementById('payModal').style.display='none';
+      document.getElementById('tokenDisplay').textContent = data.token;
+      document.getElementById('successModal').style.display='flex';
+      sessionStorage.removeItem('ecanteen-cart');
+      cart = {};
+    }
+  } catch(e){ /* silent */ }
+}
+
+loadCart();
+</script>
+</body>
+</html>

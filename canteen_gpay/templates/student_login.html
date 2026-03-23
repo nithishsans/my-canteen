@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Login – SASTRA E-Canteen</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+
+<div class="auth-container">
+  <div class="auth-left">
+    <a href="/" class="back-link">← Back to Home</a>
+    <div class="auth-brand">🍽 SASTRA E-Canteen</div>
+    <h1>Welcome Back,<br><span style="opacity:.85">Student!</span></h1>
+    <p>Login with your college register number email to pre-order meals and skip the queue.</p>
+    <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:1rem;margin-top:1rem;font-size:.88rem;">
+      <strong>📧 Email format:</strong><br>
+      <code style="font-size:.95rem">226171001@sastra.ac.in</code><br>
+      <small style="opacity:.8">9-digit register number + @sastra.ac.in</small>
+    </div>
+    <div class="auth-visual">🎓</div>
+  </div>
+  <div class="auth-right">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span class="toggle-icon" id="themeIcon">☀️</span>
+        <span id="themeLabel">Light</span>
+      </button>
+    </div>
+    <div class="auth-tabs">
+      <button class="tab-btn active" id="loginTab" onclick="showTab('login')">Login</button>
+      <button class="tab-btn" id="registerTab" onclick="showTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="loginName" placeholder="Your registered name" required>
+      </div>
+      <div class="form-group">
+        <label>College Email</label>
+        <input type="email" id="loginEmail" placeholder="226171001@sastra.ac.in" required>
+        <div class="form-hint">Format: 9-digit register number @sastra.ac.in</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Password" required>
+      </div>
+      <div id="loginMsg" class="msg" style="display:none"></div>
+      <button class="submit-btn" onclick="doLogin()">Login →</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your Full Name" required>
+      </div>
+      <div class="form-group">
+        <label>College Email</label>
+        <input type="email" id="regEmail" placeholder="226171001@sastra.ac.in" required>
+        <div class="form-hint">Must be 9-digit register number @sastra.ac.in (Range: 226171001–226171120)</div>
+      </div>
+      <div class="form-group">
+        <label>Mobile Number</label>
+        <input type="tel" id="regMobile" placeholder="10-digit mobile number" maxlength="10" required>
+        <div class="form-hint">Enter 10-digit mobile number</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPass" placeholder="Create Password" required>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="regPass2" placeholder="Confirm Password" required>
+      </div>
+      <div id="regMsg" class="msg" style="display:none"></div>
+      <button class="submit-btn" onclick="doRegister()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function getTheme(){return localStorage.getItem('ecanteen-theme')||'dark';}
+function applyTheme(t){
+  document.body.classList.toggle('light-mode',t==='light');
+  document.getElementById('themeIcon').textContent=t==='light'?'🌙':'☀️';
+  document.getElementById('themeLabel').textContent=t==='light'?'Dark':'Light';
+  localStorage.setItem('ecanteen-theme',t);
+}
+function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark');}
+applyTheme(getTheme());
+
+function showTab(tab){
+  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display=tab==='register'?'block':'none';
+  document.getElementById('loginTab').classList.toggle('active',tab==='login');
+  document.getElementById('registerTab').classList.toggle('active',tab==='register');
+}
+function showMsg(id,msg,type){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.className='msg '+type;el.style.display='block';
+}
+
+async function doLogin(){
+  const name=document.getElementById('loginName').value.trim();
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password=document.getElementById('loginPass').value;
+  if(!name||!email||!password){showMsg('loginMsg','Please fill all fields','error');return;}
+  // Client-side email format check
+  if(!/^\d{9}@sastra\.ac\.in$/.test(email)){
+    showMsg('loginMsg','Email must be in format: 226171001@sastra.ac.in (9-digit register number)','error');return;
+  }
+  const res=await fetch('/student/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password})});
+  const data=await res.json();
+  if(data.success){window.location.href='/student/dashboard';}
+  else{showMsg('loginMsg',data.message,'error');}
+}
+
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  const mobile=document.getElementById('regMobile').value.trim();
+  const pass=document.getElementById('regPass').value;
+  const pass2=document.getElementById('regPass2').value;
+  if(!name||!email||!mobile||!pass){showMsg('regMsg','Please fill all fields','error');return;}
+  if(!/^\d{9}@sastra\.ac\.in$/.test(email)){
+    showMsg('regMsg','Email must be 9-digit register number @sastra.ac.in','error');return;
+  }
+  if(!/^\d{10}$/.test(mobile)){showMsg('regMsg','Mobile number must be exactly 10 digits','error');return;}
+  if(pass!==pass2){showMsg('regMsg','Passwords do not match','error');return;}
+  if(pass.length<6){showMsg('regMsg','Password must be at least 6 characters','error');return;}
+  const res=await fetch('/student/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,mobile,password:pass})});
+  const data=await res.json();
+  if(data.success){showMsg('regMsg',data.message,'success');setTimeout(()=>showTab('login'),1500);}
+  else{showMsg('regMsg',data.message,'error');}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Food – SASTRA E-Canteen</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-page">
+
+<nav class="dash-nav">
+  <div class="logo">🍽 SASTRA E-Canteen</div>
+  <div class="nav-center">
+    <button class="nav-tab active" id="tabOrder" onclick="switchView('order')">🛍 Menu</button>
+    <button class="nav-tab" id="tabHistory" onclick="switchView('history')">📋 My Orders</button>
+  </div>
+  <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleTheme()"><span class="toggle-icon" id="themeIcon">☀️</span><span id="themeLabel">Light</span></button>
+    <span class="user-badge">👤 {{ name }}</span>
+    <a href="/student/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<!-- ORDER VIEW -->
+<div id="orderView">
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search for food..." oninput="filterMenu()">
+  </div>
+  <div class="cat-pills" id="catPills"></div>
+  <div class="food-grid" id="foodGrid"><div class="loading">Loading menu...</div></div>
+</div>
+
+<!-- HISTORY VIEW -->
+<div id="historyView" style="display:none" class="dash-content">
+  <div class="history-container">
+    <h2>My Order History</h2>
+    <div id="orderHistory"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+
+<!-- FLOATING CART BUTTON -->
+<button class="cart-float" id="cartFloat" onclick="goToCart()">
+  <div class="cf-info">
+    <span class="cf-count" id="cfCount">0 items</span>
+    <span class="cf-label">View Cart</span>
+  </div>
+  <span class="cf-price" id="cfPrice">₹0</span>
+  <span class="cf-arrow">→</span>
+</button>
+
+<script>
+// ── THEME ──
+function getTheme(){return localStorage.getItem('ecanteen-theme')||'dark';}
+function applyTheme(t){
+  document.body.classList.toggle('light-mode',t==='light');
+  document.getElementById('themeIcon').textContent=t==='light'?'🌙':'☀️';
+  document.getElementById('themeLabel').textContent=t==='light'?'Dark':'Light';
+  localStorage.setItem('ecanteen-theme',t);
+}
+function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark');}
+applyTheme(getTheme());
+
+// ── STATE ──
+let allFoods = [], cart = {}, activeCategory = 'All';
+
+// ── VIEWS ──
+function switchView(v){
+  document.getElementById('orderView').style.display=v==='order'?'block':'none';
+  document.getElementById('historyView').style.display=v==='history'?'block':'none';
+  document.getElementById('tabOrder').classList.toggle('active',v==='order');
+  document.getElementById('tabHistory').classList.toggle('active',v==='history');
+  if(v==='history') loadHistory();
+}
+
+// ── LOAD MENU ──
+async function loadMenu(){
+  const res = await fetch('/api/menu');
+  allFoods = await res.json();
+  renderCategories();
+  renderFoods(allFoods);
+}
+
+function renderCategories(){
+  const cats = ['All', ...new Set(allFoods.map(f=>f.category))];
+  document.getElementById('catPills').innerHTML = cats.map(c=>
+    `<button class="cat-pill${c===activeCategory?' active':''}" onclick="filterByCategory('${c}')">${c}</button>`
+  ).join('');
+}
+
+function filterByCategory(cat){
+  activeCategory = cat;
+  renderCategories();
+  filterMenu();
+}
+
+function filterMenu(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = allFoods;
+  if(activeCategory !== 'All') filtered = filtered.filter(f=>f.category===activeCategory);
+  if(q) filtered = filtered.filter(f=>f.name.toLowerCase().includes(q)||f.description.toLowerCase().includes(q));
+  renderFoods(filtered);
+}
+
+function renderFoods(foods){
+  const grid = document.getElementById('foodGrid');
+  if(!foods.length){
+    grid.innerHTML='<div class="loading">No items found</div>';
+    return;
+  }
+  grid.innerHTML = foods.map(f=>{
+    const qty = cart[f.id] ? cart[f.id].qty : 0;
+    return `<div class="food-card-dash" id="card-${f.id}">
+      <div class="food-card-img">
+        <img src="${f.image}" alt="${f.name}" loading="lazy">
+        <div class="veg-badge"><div class="veg-dot"></div></div>
+      </div>
+      <div class="food-card-body">
+        <div class="food-name">${f.name}</div>
+        <div class="food-desc">${f.description}</div>
+        <div class="food-footer">
+          <div>
+            <div class="food-price">₹${f.price}</div>
+            <div class="food-rating">⭐ ${f.rating}</div>
+          </div>
+          <div id="ctrl-${f.id}">
+            ${qty===0
+              ? `<button class="add-btn" onclick="addItem('${f.id}')">+ ADD</button>`
+              : `<div class="qty-ctrl">
+                  <button onclick="changeQty('${f.id}',-1)">−</button>
+                  <span>${qty}</span>
+                  <button onclick="changeQty('${f.id}',1)">+</button>
+                </div>`
+            }
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addItem(id){
+  const food = allFoods.find(f=>f.id===id);
+  if(!food) return;
+  cart[id] = {food_id:id, name:food.name, price:food.price, image:food.image, qty:1};
+  updateCartUI();
+  renderFoodControl(id);
+}
+
+function changeQty(id, delta){
+  if(!cart[id]) return;
+  cart[id].qty += delta;
+  if(cart[id].qty <= 0) delete cart[id];
+  updateCartUI();
+  renderFoodControl(id);
+}
+
+function renderFoodControl(id){
+  const ctrl = document.getElementById('ctrl-'+id);
+  if(!ctrl) return;
+  const qty = cart[id] ? cart[id].qty : 0;
+  ctrl.innerHTML = qty===0
+    ? `<button class="add-btn" onclick="addItem('${id}')">+ ADD</button>`
+    : `<div class="qty-ctrl">
+        <button onclick="changeQty('${id}',-1)">−</button>
+        <span>${qty}</span>
+        <button onclick="changeQty('${id}',1)">+</button>
+      </div>`;
+}
+
+function updateCartUI(){
+  const items = Object.values(cart);
+  const total = items.reduce((s,i)=>s+i.price*i.qty,0);
+  const count = items.reduce((s,i)=>s+i.qty,0);
+  const btn = document.getElementById('cartFloat');
+  if(count>0){
+    btn.classList.add('show');
+    document.getElementById('cfCount').textContent=count+' item'+(count>1?'s':'');
+    document.getElementById('cfPrice').textContent='₹'+total;
+  } else {
+    btn.classList.remove('show');
+  }
+}
+
+function goToCart(){
+  if(Object.keys(cart).length===0) return;
+  sessionStorage.setItem('ecanteen-cart', JSON.stringify(cart));
+  window.location.href='/student/cart';
+}
+
+// ── HISTORY ──
+async function loadHistory(){
+  const res = await fetch('/api/my_orders');
+  const orders = await res.json();
+  const c = document.getElementById('orderHistory');
+  if(!orders.length){c.innerHTML='<div class="loading">No orders yet. Start ordering!</div>';return;}
+  c.innerHTML = orders.map(o=>`
+    <div class="order-card">
+      <div class="oc-header">
+        <div>
+          <div class="oc-bill">Bill: ${o.bill_no}</div>
+          <div class="oc-time">${new Date(o.timestamp).toLocaleString()}</div>
+        </div>
+        <span class="oc-status ${o.payment_verified?'status-confirmed':'status-pending'}">
+          ${o.status}
+        </span>
+      </div>
+      <div class="oc-items">${o.items.map(i=>`${i.qty}x item`).join(', ')} • ${o.time_slot||'No time slot'}</div>
+      <div class="oc-footer">
+        <span class="oc-total">₹${o.total}</span>
+        ${o.payment_verified?`<span class="oc-token">🎫 Token: <strong>${o.token}</strong></span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+loadMenu();
+</script>
+</body>
+</html>
